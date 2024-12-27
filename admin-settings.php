@@ -236,8 +236,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                         <td>{$row['team']}</td>
                                         <td>{$row['username']}</td>
                                         <td>{$row['role']}</td>
-                                        <td>
-                                            <button class='btn btn-info btn-sm'>Edit</button>
+                                       <td>
+                                            <button class='btn btn-info btn-sm editBtn' data-id='{$row['id']}' data-first-name='{$row['first_name']}' data-last-name='{$row['last_name']}' data-mobile-number='{$row['mobile_number']}' data-email='{$row['email']}' data-team='{$row['team']}' data-username='{$row['username']}' data-role='{$row['role']}'>Edit</button>
                                             <button class='btn btn-danger btn-sm'>Delete</button>
                                         </td>
                                       </tr>";
@@ -247,6 +247,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </table>
                 </div>
             </div>
+
 
             <!-- Service Types Management Section -->
             <div class="card mb-4" style="border: 1px solid crimson;">
@@ -498,7 +499,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <?php elseif ($success): ?>
                         <div class="alert alert-success"><?php echo $success; ?></div>
                     <?php endif; ?>
-                    <form method="POST" action="admin-dashboard.php">
+                    <form method="POST" action="">
                         <div class="form-row">
                             <div class="form-group col-md-4">
                                 <label for="first_name">First Name</label>
@@ -556,6 +557,69 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         </div>
     </div>
+
+     <!-- Edit User Modal -->
+     <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editUserForm">
+                        <div class="mb-3">
+                            <label for="editFirstName" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="editFirstName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editLastName" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="editLastName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editMobileNumber" class="form-label">Mobile Number</label>
+                            <input type="text" class="form-control" id="editMobileNumber" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="editEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editTeam">Team</label>
+                            <select name="team" id="editTeam" class="form-control">
+                                <option value="">Select Team</option>
+                                <option value="Alpha">Alpha</option>
+                                <option value="Bravo">Bravo</option>
+                                <option value="Charlie">Charlie</option>
+                            </select>
+                        </div>
+
+                        
+                        <div class="mb-3">
+                            <label for="editUsername" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="editUsername" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="role">Role</label>
+                            <select name="role" id="editRole" class="form-control" required>
+                                <option value="admin">Admin</option>
+                                <option value="user">User</option>
+                            </select>
+                        </div>
+
+
+
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Save changes</button>
+                        </div>
+                    </form>
+                </div>
+                </div>
+            </div>
+            </div>
+        </div>
 
 
     <!-- Include Bootstrap JS and JS Bundle -->
@@ -627,5 +691,91 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
     </script>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+    // Select all Edit buttons
+    const editButtons = document.querySelectorAll('.editBtn');
+
+    // Loop over each button to add an event listener
+    editButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            // Get data from button attributes
+            const firstName = this.getAttribute('data-first-name');
+            const lastName = this.getAttribute('data-last-name');
+            const mobileNumber = this.getAttribute('data-mobile-number');
+            const email = this.getAttribute('data-email');
+            const team = this.getAttribute('data-team');
+            const username = this.getAttribute('data-username');
+            const role = this.getAttribute('data-role');
+            const userId = this.getAttribute('data-id');
+
+            // Set data into modal fields
+            document.getElementById('editFirstName').value = firstName;
+            document.getElementById('editLastName').value = lastName;
+            document.getElementById('editMobileNumber').value = mobileNumber;
+            document.getElementById('editEmail').value = email;
+            document.getElementById('editTeam').value = team;
+            document.getElementById('editUsername').value = username;
+            document.getElementById('editRole').value = role;
+
+            // Store the user ID in the form for later use
+            document.getElementById('editUserForm').setAttribute('data-user-id', userId);
+
+            // Trigger the modal to open
+            var myModal = new bootstrap.Modal(document.getElementById('editUserModal'), {});
+            myModal.show();
+        });
+    });
+
+    // Handle form submission for updating user (AJAX)
+    document.getElementById('editUserForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        // Get the user ID and form values
+        const userId = this.getAttribute('data-user-id');
+        const firstName = document.getElementById('editFirstName').value;
+        const lastName = document.getElementById('editLastName').value;
+        const mobileNumber = document.getElementById('editMobileNumber').value;
+        const email = document.getElementById('editEmail').value;
+        const team = document.getElementById('editTeam').value;
+        const username = document.getElementById('editUsername').value;
+        const role = document.getElementById('editRole').value;
+
+        // Make an AJAX call to update the user (using fetch as an example)
+        fetch('update_user.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: userId,
+                first_name: firstName,
+                last_name: lastName,
+                mobile_number: mobileNumber,
+                email: email,
+                team: team,
+                username: username,
+                role: role
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('User updated successfully!');
+                location.reload();  // Reload the page to see the updated user
+            } else {
+                alert('Failed to update user.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the user.');
+        });
+    });
+});
+
+</script>
 </body>
 </html>
