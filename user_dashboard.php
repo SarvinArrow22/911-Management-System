@@ -511,18 +511,24 @@ $service_types_result = mysqli_query($conn, "SELECT * FROM service_types");
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="callLogModalLabel">Edit Call Log Details</h5>
+                <h5 class="modal-title" id="callLogModalLabel">Call Log Details</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="callingModal" action="editmodal.php" method="POST">
                 <div class="modal-body">
                     <input type="hidden" name="id" id="modalId"> <!-- Hidden field to store the ID -->
 
-                     <!-- Service Type Dropdown -->
-                     <div class="mb-3">
-                        <label for="modalServiceType">Service Type</label>
-                        <select id="modalServiceType" name="service_type" class="form-control" required disabled>
-                            <option value="">Select Service Type</option>
+                    <!-- Service Type Label and Input -->
+                    <div style="display: flex;">
+                        <label for="">Service Type</label>
+                        <span id="serviceTypeText" style="display: none;">Service Type</span> <!-- Text for select service type -->
+                    </div>
+                   
+                    <div class="mb-3" style="display: flex; width: 100%;">
+                        <input type="text" id="modalServiceType" name="service_type" class="form-control" required placeholder="Enter Service Type" readonly>
+                        
+                        <!-- Service Type Dropdown (hidden by default) -->
+                        <select id="modalServiceTypeSelect" name="service_type" class="form-control" style="display: none;">
                             <?php
                             // Fetch service types from the database
                             $service_types_result = mysqli_query($conn, "SELECT * FROM service_types");
@@ -533,15 +539,21 @@ $service_types_result = mysqli_query($conn, "SELECT * FROM service_types");
                         </select>
                     </div>
 
+                    <!-- Call Type Label and Input -->
+                    <div style="display: flex;">
+                        <label for="">Call Type</label>
+                        <span id="callTypeText" style="display: none;">Call Type</span> <!-- Text for select call type -->
+                    </div>
+
                     <!-- Call Type Dropdown -->
-                    <div class="mb-3">
-                        <label for="modalCallType">Call Type</label>
-                        <select id="modalCallType" name="call_type" class="form-control" required disabled>
+                    <div class="mb-3" style="display: flex; width: 100%;">
+                        <input type="text" id="modalCallType" name="call_type" class="form-control" required placeholder="Enter Call Type" readonly>
+                        
+                        <!-- Call Type Dropdown (hidden by default) -->
+                        <select id="modalCallTypeSelect" name="call_type" class="form-control" style="display: none;" disabled>
                             <option value="">Select Call Type</option>
                         </select>
                     </div>
-
-                    
 
                     <!-- Call Date -->
                     <div class="mb-3">
@@ -584,6 +596,7 @@ $service_types_result = mysqli_query($conn, "SELECT * FROM service_types");
                         <label for="modalLocation" class="form-label">Location</label>
                         <input type="text" class="form-control" name="location" id="modalLocation" required readonly>
                     </div>
+
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="editButton">Edit</button>
@@ -601,70 +614,94 @@ $service_types_result = mysqli_query($conn, "SELECT * FROM service_types");
 
 <!-- JavaScript to enable the Edit functionality -->
 <script>
-    // When the Edit button is clicked
-    document.getElementById('editButton').addEventListener('click', function() {
-        // Enable all the input fields by removing the readonly attribute
-        let inputs = document.querySelectorAll('#callLogModal input');
-        inputs.forEach(input => input.removeAttribute('readonly'));
+// When the Edit button is clicked
+document.getElementById('editButton').addEventListener('click', function() {
+    // Show the "Select Service Type" text and the dropdown
+    document.getElementById('serviceTypeText').style.display = 'inline';  // Show the label "Select Service Type"
+    document.getElementById('modalServiceTypeSelect').style.display = 'inline';  // Show the dropdown
+    document.getElementById('modalServiceType').style.display = 'none';  // Hide the text input
 
-        // Enable the dropdowns by removing the disabled attribute
-        document.getElementById('modalServiceType').removeAttribute('disabled');
-        document.getElementById('modalCallType').removeAttribute('disabled');
+    // Show the "Select Call Type" text and dropdown
+    document.getElementById('callTypeText').style.display = 'inline';  // Show the label "Select Call Type"
+    document.getElementById('modalCallTypeSelect').style.display = 'inline';  // Show the dropdown
+    document.getElementById('modalCallType').style.display = 'none';  // Hide the text input
 
-        // Hide the Edit button
-        document.getElementById('editButton').style.display = 'none';
+    // Enable all the input fields by removing the readonly attribute
+    let inputs = document.querySelectorAll('#callLogModal input');
+    inputs.forEach(input => input.removeAttribute('readonly'));
 
-        // Show the Save and Cancel buttons
-        document.getElementById('saveButton').style.display = 'inline-block';
-        document.getElementById('cancelButton').style.display = 'inline-block';
+    // Enable the dropdowns by removing the disabled attribute
+    document.getElementById('modalServiceTypeSelect').removeAttribute('disabled');
+    document.getElementById('modalCallTypeSelect').removeAttribute('disabled');
 
-        // Hide the Delete and Close buttons
-        document.getElementById('deleteButton').style.display = 'none';
-        document.getElementById('closeButton').style.display = 'none';
-    });
+    // Hide the Edit button
+    document.getElementById('editButton').style.display = 'none';
 
-    // When the Cancel button is clicked
-    document.getElementById('cancelButton').addEventListener('click', function() {
-        // Disable all input fields by adding the readonly attribute
-        let inputs = document.querySelectorAll('#callLogModal input');
-        inputs.forEach(input => input.setAttribute('readonly', 'true'));
+    // Show the Save and Cancel buttons
+    document.getElementById('saveButton').style.display = 'inline-block';
+    document.getElementById('cancelButton').style.display = 'inline-block';
 
-        // Disable the dropdowns by adding the disabled attribute
-        document.getElementById('modalServiceType').setAttribute('disabled', 'true');
-        document.getElementById('modalCallType').setAttribute('disabled', 'true');
+    // Hide the Delete and Close buttons
+    document.getElementById('deleteButton').style.display = 'none';
+    document.getElementById('closeButton').style.display = 'none';
+});
 
-        // Hide the Save and Cancel buttons
-        document.getElementById('saveButton').style.display = 'none';
-        document.getElementById('cancelButton').style.display = 'none';
+// When the Cancel button is clicked
+document.getElementById('cancelButton').addEventListener('click', function() {
+    // Hide the "Select Service Type" text and the dropdown
+    document.getElementById('serviceTypeText').style.display = 'none'; // Hide "Select Service Type"
+    document.getElementById('modalServiceTypeSelect').style.display = 'none'; // Hide the dropdown
+    document.getElementById('modalServiceType').style.display = 'inline';  // Show the text input
 
-        // Show the Edit button
-        document.getElementById('editButton').style.display = 'inline-block';
+    // Hide the "Select Call Type" text and the dropdown
+    document.getElementById('callTypeText').style.display = 'none'; // Hide "Select Call Type"
+    document.getElementById('modalCallTypeSelect').style.display = 'none'; // Hide the dropdown
+    document.getElementById('modalCallType').style.display = 'inline';  // Show the text input
 
-        // Show the Delete and Close buttons
-        document.getElementById('deleteButton').style.display = 'inline-block';
-        document.getElementById('closeButton').style.display = 'inline-block';
-    });
+    // Disable all input fields by adding the readonly attribute
+    let inputs = document.querySelectorAll('#callLogModal input');
+    inputs.forEach(input => input.setAttribute('readonly', 'true'));
 
-    // Dynamically load call types based on the selected service type
-    document.getElementById('modalServiceType').addEventListener('change', function() {
-        let serviceTypeId = this.value;
-        
-        // Fetch call types based on the selected service type
-        fetch(`get_call_types.php?service_type_id=${serviceTypeId}`)
-            .then(response => response.json())
-            .then(data => {
-                let callTypeSelect = document.getElementById('modalCallType');
-                callTypeSelect.innerHTML = '<option value="">Select Call Type</option>';
-                
-                data.forEach(callType => {
-                    let option = document.createElement('option');
-                    option.value = callType.id;
-                    option.textContent = callType.call_type;
-                    callTypeSelect.appendChild(option);
-                });
-            });
-    });
+    // Disable the dropdowns by adding the disabled attribute
+    document.getElementById('modalServiceTypeSelect').setAttribute('disabled', 'true');
+    document.getElementById('modalCallTypeSelect').setAttribute('disabled', 'true');
+
+    // Hide the Save and Cancel buttons
+    document.getElementById('saveButton').style.display = 'none';
+    document.getElementById('cancelButton').style.display = 'none';
+
+    // Show the Edit button
+    document.getElementById('editButton').style.display = 'inline-block';
+
+    // Show the Delete and Close buttons
+    document.getElementById('deleteButton').style.display = 'inline-block';
+    document.getElementById('closeButton').style.display = 'inline-block';
+});
+
+// Dynamically load call types based on the selected service type (AJAX code)
+document.getElementById('modalServiceTypeSelect').addEventListener('change', function() {
+    var serviceTypeId = this.value;
+    
+    // If no service type is selected, clear the call type dropdown
+    if (serviceTypeId === "") {
+        document.getElementById('modalCallTypeSelect').innerHTML = '<option value="">Select Call Type</option>';
+        return;
+    }
+
+    // Send the selected service type ID to the server using AJAX
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'get_call_types.php?service_type_id=' + serviceTypeId, true);
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            // Populate the Call Type dropdown with the received data
+            document.getElementById('modalCallTypeSelect').innerHTML = xhr.responseText;
+        }
+    };
+    xhr.send();
+});
 </script>
+
+
 
 
     </div>
@@ -888,43 +925,44 @@ $service_types_result = mysqli_query($conn, "SELECT * FROM service_types");
     </script>
 
 <script>
-    // Event listener to populate modal when a row is clicked
-    document.querySelectorAll('.clickable-row').forEach(row => {
-        row.addEventListener('click', function () {
-            // Get the data from the clicked row's data attributes
-            var id = this.getAttribute('data-id');
-            var serviceType = this.getAttribute('data-service-type');
-            var callType = this.getAttribute('data-call-type');
-            var callDate = this.getAttribute('data-call-date');
-            var callTime = this.getAttribute('data-call-time');
-            var contactNumber = this.getAttribute('data-contact-number');
-            var count = this.getAttribute('data-count');
-            var name = this.getAttribute('data-name');
-            var age = this.getAttribute('data-age');
-            var location = this.getAttribute('data-location');
+   // Event listener to populate modal when a row is clicked
+document.querySelectorAll('.clickable-row').forEach(row => {
+    row.addEventListener('click', function () {
+        // Get the data from the clicked row's data attributes
+        var id = this.getAttribute('data-id');
+        var serviceType = this.getAttribute('data-service-type');
+        var callType = this.getAttribute('data-call-type');
+        var callDate = this.getAttribute('data-call-date');
+        var callTime = this.getAttribute('data-call-time');
+        var contactNumber = this.getAttribute('data-contact-number');
+        var count = this.getAttribute('data-call-count');
+        var name = this.getAttribute('data-name');
+        var age = this.getAttribute('data-age');
+        var location = this.getAttribute('data-location');
 
-            // Populate the modal with the row data
-            document.getElementById('modalId').value = id;
-            document.getElementById('modalServiceType').value = serviceType;
-            document.getElementById('modalCallDate').value = callDate;
-            document.getElementById('modalCallTime').value = callTime;
-            document.getElementById('modalContactNumber').value = contactNumber;
-            document.getElementById('modalCount').value = count;
-            document.getElementById('modalName').value = name;
-            document.getElementById('modalAge').value = age;
-            document.getElementById('modalLocation').value = location;
+        // Populate the modal with the row data
+        document.getElementById('modalId').value = id;
+        document.getElementById('modalServiceType').value = serviceType;
+        document.getElementById('modalCallDate').value = callDate;
+        document.getElementById('modalCallTime').value = callTime;
+        document.getElementById('modalContactNumber').value = contactNumber;
+        document.getElementById('modalCount').value = count;
+        document.getElementById('modalName').value = name;
+        document.getElementById('modalAge').value = age;
+        document.getElementById('modalLocation').value = location;
 
-            // Trigger change event to update call types based on the selected service type
-            document.getElementById('modalServiceType').dispatchEvent(new Event('change'));
+        // Trigger change event to update call types based on the selected service type
+        document.getElementById('modalServiceType').dispatchEvent(new Event('change'));
 
-            // Pre-select call type
-            document.getElementById('modalCallType').value = callType;
+        // Pre-select call type (if available)
+        document.getElementById('modalCallType').value = callType;
 
-            // Show the modal
-            var myModal = new bootstrap.Modal(document.getElementById('callLogModal'));
-            myModal.show();
-        });
+        // Show the modal
+        var myModal = new bootstrap.Modal(document.getElementById('callLogModal'));
+        myModal.show();
     });
+});
+
 
     // JavaScript (AJAX) to update the Call Type dropdown based on the selected Service Type
     document.getElementById('modalServiceType').addEventListener('change', function() {
