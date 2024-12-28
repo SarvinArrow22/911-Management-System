@@ -392,10 +392,9 @@ $service_types_result = mysqli_query($conn, "SELECT * FROM service_types");
                                 ></textarea>
                             </div>
                             </div>
-                        </form>
 
-                        <!-- Footer -->
-                            <div class="flex justify-end mt-6">
+                              <!-- Footer -->
+                              <div class="flex justify-end mt-6">
                                 <button 
                                     type="submit" 
                                     class="px-4 py-2 text-blue bg-blue-600 rounded-lg hover:bg-blue-700"
@@ -403,6 +402,10 @@ $service_types_result = mysqli_query($conn, "SELECT * FROM service_types");
                                     Save
                                 </button>
                             </div>
+                            
+                        </form>
+
+                      
                         </div>
                         </div>
                     </template>
@@ -435,7 +438,7 @@ $service_types_result = mysqli_query($conn, "SELECT * FROM service_types");
                       </div>
                       <div>
                         <a href="#" class="text-base font-medium text-slate-700 hover:text-primary focus:text-primary dark:text-navy-100 dark:hover:text-accent-light dark:focus:text-accent-light">
-                          Your Name
+                          <?= $_SESSION['full_name'] ?>
                         </a>
                         <p class="text-xs text-slate-400 dark:text-navy-300">
                           Emergency Telecommunicator
@@ -1034,10 +1037,13 @@ foreach ($types as $type) {
                                             cl.reason_of_call,
                                             cl.actions_taken,
                                             cl.remarks
-                                        FROM call_logs cl
-                                        LEFT JOIN service_types st ON cl.type_of_service = st.id
-                                        LEFT JOIN call_types ct ON cl.call_type = ct.id
-                                        LIMIT $offset, $rows_per_page
+                                      FROM call_logs cl
+                                      LEFT JOIN service_types st ON cl.type_of_service = st.id
+                                      LEFT JOIN call_types ct ON cl.call_type = ct.id
+                                      WHERE cl.agent_id = $user_id 
+                                        AND cl.status = 'pending_case'  -- assuming 'pending_case' is a string
+                                      LIMIT $offset, $rows_per_page;
+
                                     ";
                                     $result = mysqli_query($conn, $query);
 
@@ -1079,7 +1085,6 @@ foreach ($types as $type) {
                                     } else {
                                         echo "<tr><td colspan='11' class='text-center'>No records found</td></tr>";
                                     }
-                                    mysqli_close($conn);
                                 ?>
                                 </tbody>
                             </table>
@@ -1123,7 +1128,7 @@ foreach ($types as $type) {
                 <div class="col-span-12">
                 <div class="flex items-center justify-between">
                     <h2 class="text-base font-medium tracking-wide text-slate-700 line-clamp-1 dark:text-navy-100">
-                        Pending Call Log
+                        Closed Call Log
                     </h2>
                     <div class="flex">
                         <div class="flex items-center" x-data="{isInputActive:false}">
@@ -1167,6 +1172,109 @@ foreach ($types as $type) {
                     </div>
                     </div>
                     <!-- Table  -->
+
+                    <div class="is-scrollbar-hidden min-w-full overflow-x-auto">
+                            <table class="is-zebra w-full text-left" id="callLogTable">
+                                <thead>
+                                    <tr>
+                                        <th class="whitespace-nowrap rounded-l-lg bg-slate-200 px-3 py-3 font-semibold uppercase text-slate-800 dark:bg-navy-800 dark:text-navy-100 lg:px-5">#</th>
+                                        <th class="whitespace-nowrap bg-slate-200 px-4 py-3 font-semibold uppercase text-slate-800 dark:bg-navy-800 dark:text-navy-100 lg:px-5">Type of Service</th>
+                                        <th class="whitespace-nowrap bg-slate-200 px-4 py-3 font-semibold uppercase text-slate-800 dark:bg-navy-800 dark:text-navy-100 lg:px-5">Call Type</th>
+                                        <th class="whitespace-nowrap bg-slate-200 px-4 py-3 font-semibold uppercase text-slate-800 dark:bg-navy-800 dark:text-navy-100 lg:px-5">Call Date</th>
+                                        <th class="whitespace-nowrap bg-slate-200 px-4 py-3 font-semibold uppercase text-slate-800 dark:bg-navy-800 dark:text-navy-100 lg:px-5">Call Time</th>
+                                        <th class="whitespace-nowrap bg-slate-200 px-4 py-3 font-semibold uppercase text-slate-800 dark:bg-navy-800 dark:text-navy-100 lg:px-5">Contact Number</th>
+                                        <th class="whitespace-nowrap bg-slate-200 px-4 py-3 font-semibold uppercase text-slate-800 dark:bg-navy-800 dark:text-navy-100 lg:px-5">Call Count</th>
+                                        <th class="whitespace-nowrap bg-slate-200 px-4 py-3 font-semibold uppercase text-slate-800 dark:bg-navy-800 dark:text-navy-100 lg:px-5">Name</th>
+                                        <th class="whitespace-nowrap bg-slate-200 px-4 py-3 font-semibold uppercase text-slate-800 dark:bg-navy-800 dark:text-navy-100 lg:px-5">Age</th>
+                                        <th class="whitespace-nowrap rounded-r-lg bg-slate-200 px-3 py-3 font-semibold uppercase text-slate-800 dark:bg-navy-800 dark:text-navy-100 lg:px-5">Location</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <?php
+                                    // Define the number of rows per page
+                                    $rows_per_page = 10;
+
+                                    // Get the current page from the URL, default to 1 if not set
+                                    $page = isset($_GET['page']) ? $_GET['page'] : 1;
+
+                                    // Calculate the offset for the query
+                                    $offset = ($page - 1) * $rows_per_page;
+
+                                    // Query to get the total number of rows
+                                    $count_query = "SELECT COUNT(*) AS total_rows FROM call_logs";
+                                    $count_result = mysqli_query($conn, $count_query);
+                                    $count_row = mysqli_fetch_assoc($count_result);
+                                    $total_rows = $count_row['total_rows'];
+
+                                    // Calculate the total number of pages
+                                    $total_pages = ceil($total_rows / $rows_per_page);
+
+                                    $query = "
+                                        SELECT cl.id,
+                                            st.service_type,
+                                            ct.call_type,
+                                            cl.call_date,
+                                            cl.call_time,
+                                            cl.contact_number,
+                                            cl.call_count,
+                                            cl.name,
+                                            cl.age,
+                                            cl.location,
+                                            cl.reason_of_call,
+                                            cl.actions_taken,
+                                            cl.remarks
+                                      FROM call_logs cl
+                                      LEFT JOIN service_types st ON cl.type_of_service = st.id
+                                      LEFT JOIN call_types ct ON cl.call_type = ct.id
+                                      WHERE cl.agent_id = $user_id 
+                                        AND cl.status = 'closed_case'  -- assuming 'pending_case' is a string
+                                      LIMIT $offset, $rows_per_page;
+
+                                    ";
+                                    $result = mysqli_query($conn, $query);
+
+                                    $contactNumberCounts = [];
+                                    $no = 1;
+
+                                    if (mysqli_num_rows($result) > 0) {
+                                        while ($row = mysqli_fetch_assoc($result)) {
+                                            $contactNumber = $row['contact_number'];
+                                            if (isset($contactNumberCounts[$contactNumber])) {
+                                                $contactNumberCounts[$contactNumber]++;
+                                            } else {
+                                                $contactNumberCounts[$contactNumber] = 1;
+                                            }
+
+                                            echo "<tr class='clickable-row' 
+                                                    data-service-type='{$row['service_type']}' 
+                                                    data-call-type='{$row['call_type']}' 
+                                                    data-call-date='{$row['call_date']}' 
+                                                    data-call-time='{$row['call_time']}' 
+                                                    data-contact-number='{$row['contact_number']}' 
+                                                    data-count='{$contactNumberCounts[$contactNumber]}'
+                                                    data-name='{$row['name']}' 
+                                                    data-age='{$row['age']}' 
+                                                    data-location='{$row['location']}'>
+                                                    <td class='whitespace-nowrap rounded-l-lg px-4 py-3 sm:px-5'>{$no}</td>
+                                                    <td class='whitespace-nowrap px-4 py-3 sm:px-5'>{$row['service_type']}</td>
+                                                    <td class='whitespace-nowrap px-4 py-3 sm:px-5'>{$row['call_type']}</td>
+                                                    <td class='whitespace-nowrap px-4 py-3 sm:px-5'>{$row['call_date']}</td>
+                                                    <td class='whitespace-nowrap px-4 py-3 sm:px-5'>{$row['call_time']}</td>
+                                                    <td class='whitespace-nowrap px-4 py-3 sm:px-5'>{$row['contact_number']}</td>
+                                                    <td class='whitespace-nowrap px-4 py-3 sm:px-5'>{$contactNumberCounts[$contactNumber]}</td>
+                                                    <td class='whitespace-nowrap px-4 py-3 sm:px-5'>{$row['name']}</td>
+                                                    <td class='whitespace-nowrap px-4 py-3 sm:px-5'>{$row['age']}</td>
+                                                    <td class='whitespace-nowrap rounded-r-lg px-4 py-3 sm:px-5'>{$row['location']}</td>
+                                                </tr>";
+                                            $no++;
+                                        }
+                                    } else {
+                                        echo "<tr><td colspan='11' class='text-center'>No records found</td></tr>";
+                                    }
+                                ?>
+                                </tbody>
+                            </table>
+                            </div>
                     
                     <!-- Pagination -->
                     <div class="flex flex-col justify-between space-y-4 px-4 py-4 sm:flex-row sm:items-center sm:space-y-0 sm:px-5">
