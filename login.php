@@ -8,11 +8,13 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = trim($_POST['username']);
     $password = trim($_POST['password']);
+    $selected_team = $_POST['dropdown']; // Get selected team
 
-    if (empty($username) || empty($password)) {
-        $error = "Please enter both username and password.";
+    if (empty($username) || empty($password) || empty($selected_team)) {
+        $error = "Please enter both username, password, and select a team.";
     } else {
-        $sql = "SELECT id, first_name, last_name, password, role FROM users WHERE username = ?";
+        // Query to get user information and their associated team
+        $sql = "SELECT id, first_name, last_name, password, team, role FROM users WHERE username = ?";
         $stmt = $conn->prepare($sql);
 
         if ($stmt) {
@@ -21,23 +23,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $stmt->store_result();
 
             if ($stmt->num_rows == 1) {
-                $stmt->bind_result($id, $first_name, $last_name, $hashed_password, $role);
+                $stmt->bind_result($id, $first_name, $last_name, $hashed_password, $team, $role);
                 $stmt->fetch();
 
+                // Validate password and team selection
                 if (password_verify($password, $hashed_password)) {
-                    $_SESSION['user_id'] = $id;
-                    $_SESSION['username'] = $username;
-                    $_SESSION['role'] = $role;
-                    $_SESSION['full_name'] = $first_name . ' ' . $last_name;
+                    if ($selected_team == $team) { // Check if selected team matches user's team
+                        // Store user session data including team
+                        $_SESSION['user_id'] = $id;
+                        $_SESSION['username'] = $username;
+                        $_SESSION['role'] = $role;
+                        $_SESSION['full_name'] = $first_name . ' ' . $last_name;
+                        $_SESSION['team'] = $team; // Store team information
 
-                    if ($role === 'admin') {
-                        header("Location: admin_dashboard2.php");
-                        exit();
-                    } else if ($role === 'user') {
-                        header("Location: user_dashboard.php");
-                        exit();
+                        // Redirect based on role
+                        if ($role === 'admin') {
+                            header("Location: admin_dashboard.php");
+                            exit();
+                        } else if ($role === 'user') {
+                            header("Location: user_dashboardTeam.php");
+                            exit();
+                        } else {
+                            $error = "Unknown role. Please contact the administrator.";
+                        }
                     } else {
-                        $error = "Unknown role. Please contact the administrator.";
+                        $error = "The selected team does not match your assigned team.";
                     }
                 } else {
                     $error = "Invalid password. Please try again.";
@@ -116,10 +126,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <label for="password" class="form-label">Password</label>
                                 <input type="password" name="password" id="password" class="form-control" placeholder="Enter Password" required>
                             </div>
+                            <div class="mb-3">
+                                <label for="dropdown" class="form-label">Choose Team</label>
+                                <select name="dropdown" id="dropdown" class="form-control" required>
+                                    <option value="" disabled selected>Select a team</option>
+                                    <option value="alpha">Alpha</option>
+                                    <option value="bravo">Bravo</option>
+                                    <option value="charlie">Charlie</option>
+                                </select>
+                            </div>
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-primary btn-block">Login</button>
                             </div>
                         </form>
+
                     </div>
                     <div class="card-footer text-center">
                         <small class="footer-text">Don't have an account? <a href="register.php">Register</a></small>
