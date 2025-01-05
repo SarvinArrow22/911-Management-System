@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Execute the query
     if ($stmt->execute()) {
-        header('Location: user_dashboardTeam.php');
+        header('Location: newsoks.php');
         exit;
     } else {
         header('Location: add_log_form.php?error=' . $stmt->error);
