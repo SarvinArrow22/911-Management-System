@@ -610,7 +610,7 @@ $service_types_result = mysqli_query($conn, "SELECT * FROM service_types");
                 <!-- The 6Cards -->
                 <div class="col-span-12 lg:col-span-4">
 
-                <?php
+<?php
     // Fetch the logged-in user's information
     if (isset($_SESSION['user_id'])) {
         $user_id = $_SESSION['user_id'];
@@ -648,14 +648,22 @@ $service_types_result = mysqli_query($conn, "SELECT * FROM service_types");
                 // Assign the service_type_id for "Prank Call"
                 $prank_call_row = mysqli_fetch_assoc($call_types_result);
                 $prank_call_service_id = $prank_call_row['service_type_id'];
-            } else {
-                $prank_call_service_id = null; // No "Prank Call" found
+
+                // Count how many times "Prank Call" appears in the team table
+                $count_query = "SELECT COUNT(*) AS count FROM $table_name WHERE type_of_service = $prank_call_service_id";
+                $count_result = mysqli_query($conn, $count_query);
+                $prank_call_count = mysqli_fetch_assoc($count_result)['count'];
+
+                // Only include "Prank Call" if count is greater than zero
+                if ($prank_call_count > 0) {
+                    $counts['Prank Call'] = $prank_call_count;
+                }
             }
 
             // Initialize an array to hold the count for each service type
             $counts = [];
 
-            // Query the team table to count how many times each service type id appears
+            // Query the team table to count how many times each predefined service type id appears
             foreach ($predefined_service_types as $service_name) {
                 // Handle predefined service types
                 $query = "SELECT id FROM service_types WHERE service_type = '$service_name'";
@@ -672,17 +680,6 @@ $service_types_result = mysqli_query($conn, "SELECT * FROM service_types");
                 }
             }
 
-            // If "Prank Call" exists, we fetch its count as well
-            if ($prank_call_service_id) {
-                $count_query = "SELECT COUNT(*) AS count FROM $table_name WHERE type_of_service = $prank_call_service_id";
-                $count_result = mysqli_query($conn, $count_query);
-                $counts['Prank Call'] = mysqli_fetch_assoc($count_result)['count'];
-            } else {
-                $counts['Prank Call'] = 0; // Default to 0 if no "Prank Call" found
-            }
-
-            // Limit the counts to 6 items (5 predefined + "Prank Call")
-            $counts = array_slice($counts, 0, 6);
         } else {
             echo "User data not found.";
             exit();
