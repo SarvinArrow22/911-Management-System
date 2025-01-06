@@ -1238,9 +1238,12 @@ $service_types_result = mysqli_query($conn, "SELECT * FROM service_types");
                                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Age</label>
                                             <input type="text" name="age" value="${age}" class="w-full mt-1 rounded-lg border border-gray-300 p-2 bg-transparent" required>
                                         </div>
-                                        <div>
+                                       <div>
                                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-                                            <input type="text" name="status" value="${status}" class="w-full mt-1 rounded-lg border border-gray-300 p-2 bg-transparent" required>
+                                            <select name="status" class="w-full mt-1 rounded-lg border border-gray-300 p-2 bg-transparent" required>
+                                                <option value="pending_case" ${status === 'pending_case' ? 'selected' : ''}>Pending Case</option>
+                                                <option value="closed_case" ${status === 'closed_case' ? 'selected' : ''}>Closed Case</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
