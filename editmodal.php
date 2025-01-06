@@ -1,56 +1,109 @@
 <?php
-// Assuming you have an active connection to your database
-include('includes/db.php'); // Replace with your actual DB connection file
+session_start();  // Make sure the session is started
+include('includes/db.php'); // Include database connection
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Get the values from the submitted form
-    $id = $_POST['id']; // The ID of the call log to update
-    $serviceType = $_POST['service_type'];
-    $callType = $_POST['call_type'];
-    $callDate = $_POST['call_date'];
-    $callTime = $_POST['call_time'];
-    $contactNumber = $_POST['contact_number'];
-    $count = $_POST['count'];
+// Fetch the logged-in user's information
+if (isset($_SESSION['user_id'])) {
+    $user_id = $_SESSION['user_id'];
+    $query = "SELECT team FROM users WHERE id = $user_id";
+    $result = mysqli_query($conn, $query);
+
+    if ($result && mysqli_num_rows($result) > 0) {
+        $user = mysqli_fetch_assoc($result);
+        $team = $user['team'];
+
+        // Determine which table to query based on the user's team
+        switch ($team) {
+            case 'alpha':
+                $table_name = 'alpha_tbl';
+                break;
+            case 'bravo':
+                $table_name = 'bravo_tbl';
+                break;
+            case 'charlie':
+                $table_name = 'charlie_tbl';
+                break;
+            default:
+                echo "Unknown team. Please contact the administrator.";
+                exit();
+        }
+    } else {
+        echo "User data not found.";
+        exit();
+    }
+} else {
+    echo "User not logged in.";
+    exit();
+}
+
+// Check if the update form is submitted
+if (isset($_POST['update'])) {
+    // Get the data from the form
+    $id = $_POST['id'];
+    $agent_id = $_POST['agent_id'];
+    $team = $_POST['team'];  // This is not used in update, but you might want to keep it
+    $service_type = $_POST['service_type'];
+    $call_type = $_POST['call_type'];
+    $call_date = $_POST['call_date'];
+    $call_time = $_POST['call_time'];
+    $contact_number = $_POST['contact_number'];
     $name = $_POST['name'];
     $age = $_POST['age'];
     $location = $_POST['location'];
+    $reason_of_call = $_POST['reason_of_call'];
+    $actions_taken = $_POST['action_taken'];
+    $remarks = $_POST['remarks'];
+    $status = $_POST['status'];
 
-    // Prepare the SQL Query using prepared statements to prevent SQL injection
-    $query = "UPDATE call_logs cl
-              LEFT JOIN service_types st ON cl.type_of_service = st.id
-              LEFT JOIN call_types ct ON cl.call_type = ct.id
-              SET 
-                  cl.type_of_service = ?,
-                  cl.call_type = ?,
-                  cl.call_date = ?,
-                  cl.call_time = ?,
-                  cl.contact_number = ?,
-                  cl.call_count = ?,
-                  cl.name = ?,
-                  cl.age = ?,
-                  cl.location = ?
-              WHERE cl.id = ?";
+    // Perform validation and sanitization of input fields
+    if (empty($agent_id) || empty($service_type) || empty($call_type) || empty($call_date) || empty($call_time) || empty($contact_number) || empty($name) || empty($age) || empty($status)) {
+        echo "<script>alert('Please fill in all required fields.');</script>";
+        exit();
+    }
 
-    // Prepare the statement
-    if ($stmt = mysqli_prepare($conn, $query)) {
-        // Bind parameters to the prepared statement
-        mysqli_stmt_bind_param($stmt, "sssssssssi", 
-            $serviceType, $callType, $callDate, $callTime, 
-            $contactNumber, $count, $name, $age, $location, $id);
+    // Sanitize the input data to prevent SQL injection
+    $id = mysqli_real_escape_string($conn, $id);
+    $agent_id = mysqli_real_escape_string($conn, $agent_id);
+    $team = mysqli_real_escape_string($conn, $team);
+    $service_type = mysqli_real_escape_string($conn, $service_type);
+    $call_type = mysqli_real_escape_string($conn, $call_type);
+    $call_date = mysqli_real_escape_string($conn, $call_date);
+    $call_time = mysqli_real_escape_string($conn, $call_time);
+    $contact_number = mysqli_real_escape_string($conn, $contact_number);
+    $name = mysqli_real_escape_string($conn, $name);
+    $age = mysqli_real_escape_string($conn, $age);
+    $location = mysqli_real_escape_string($conn, $location);
+    $reason_of_call = mysqli_real_escape_string($conn, $reason_of_call);
+    $actions_taken = mysqli_real_escape_string($conn, $actions_taken);
+    $remarks = mysqli_real_escape_string($conn, $remarks);
+    $status = mysqli_real_escape_string($conn, $status);
 
-        // Execute the statement
-        if (mysqli_stmt_execute($stmt)) {
-            // Redirect to the main page with a success message
-            header('Location: user_dashboard.php?success=1');
-            exit();
-        } else {
-            echo "Error updating record: " . mysqli_error($conn);
-        }
+    // Update the record in the correct table based on user's team
+    $update_query = "
+        UPDATE $table_name 
+        SET 
+            agent_id = '$agent_id',
+            team = '$team',
+            type_of_service = '$service_type',
+            call_type = '$call_type',
+            call_date = '$call_date',
+            call_time = '$call_time',
+            contact_number = '$contact_number',
+            name = '$name',
+            age = '$age',
+            location = '$location',
+            reason_of_call = '$reason_of_call',
+            actions_taken = '$actions_taken',
+            remarks = '$remarks',
+            status = '$status'
+        WHERE id = '$id'
+    ";
 
-        // Close the prepared statement
-        mysqli_stmt_close($stmt);
+    if (mysqli_query($conn, $update_query)) {
+        echo "<script>alert('Record updated successfully!'); window.location.href = 'newsoks.php';</script>";
     } else {
-        echo "Error preparing the query: " . mysqli_error($conn);
+        echo "<script>alert('Error updating record.');</script>";
     }
 }
 ?>
+ 
